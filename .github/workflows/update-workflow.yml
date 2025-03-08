@@ -26,7 +26,7 @@ permissions:
 jobs:
   update:
     name: Download assets
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     outputs: # https://stackoverflow.com/questions/70287603/dynamic-outputs-for-job-with-strategy-matrix
       branch-name: ${{ steps.checkout-branch.outputs.branch-name }}
       enemy-spine-condition: ${{ steps.extract-enemy-spine.outputs.condition }}
@@ -86,9 +86,6 @@ jobs:
             rm ${{ inputs.server }}.apk
             echo $REMOTE_URL > apk_url_${{ inputs.server }}.txt
           fi
-      - name: Set up tmate session
-        if: failure()
-        uses: mxschmitt/action-tmate@v3
       - name: Checkout branch
         if: steps.download-assets.outputs.condition == 'true'
         id: checkout-branch
