@@ -86,6 +86,9 @@ jobs:
             rm ${{ inputs.server }}.apk
             echo $REMOTE_URL > apk_url_${{ inputs.server }}.txt
           fi
+      - name: Set up tmate session
+        if: failure()
+        uses: mxschmitt/action-tmate@v3
       - name: Checkout branch
         if: steps.download-assets.outputs.condition == 'true'
         id: checkout-branch
