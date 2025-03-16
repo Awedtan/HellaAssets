@@ -249,7 +249,13 @@ jobs:
           source scripts/extract_ab.sh
 
           extract_ab "battle/prefabs/[uc]tokens.ab" "spine/deploy" "-t tex2d,textAsset -g none --log-level warning"
-          python3 scripts/spine_general.py scripts/extracted/spine/deploy
+
+          FILES=battle/prefabs/[uc]tokens.ab
+          FOLDER=spine/deploy
+          mkdir -p scripts/assets/$FOLDER scripts/extracted/$FOLDER
+          cp -f scripts/apk/assets/AB/Android/$FILES scripts/assets/$FOLDER || :
+          cp -f scripts/download/$FILES scripts/assets/$FOLDER || :
+          python3 scripts/spine_deploy.py scripts/assets/$FOLDER scripts/extracted/$FOLDER
 
           mkdir -p spine/deploy
           cp -r scripts/extracted/spine/deploy/* spine/deploy/ || :
@@ -269,7 +275,7 @@ jobs:
           source scripts/extract_ab.sh
 
           extract_ab "battle/prefabs/enemies/enemy*.ab" "spine/enemy" "-t tex2d,textAsset -g none --log-level warning"
-          python3 scripts/spine_general.py scripts/extracted/spine/enemy
+          python3 scripts/spine_enemy.py scripts/extracted/spine/enemy
 
           mkdir -p spine/enemy
           cp -r scripts/extracted/spine/enemy/* spine/enemy/ || :
@@ -291,14 +297,14 @@ jobs:
           mkdir -p scripts/assets/$FOLDER scripts/extracted/$FOLDER
           cp -f scripts/apk/assets/AB/Android/$FILES scripts/assets/$FOLDER || :
           cp -f scripts/download/$FILES scripts/assets/$FOLDER || :
-          python3 scripts/spine_char.py scripts/assets/$FOLDER scripts/extracted/$FOLDER
+          python3 scripts/spine_deploy.py scripts/assets/$FOLDER scripts/extracted/$FOLDER
 
           FILES=skinpack/char*.ab
           FOLDER=spine/operator
           mkdir -p scripts/assets/$FOLDER scripts/extracted/$FOLDER
           cp -f scripts/apk/assets/AB/Android/$FILES scripts/assets/$FOLDER || :
           cp -f scripts/download/$FILES scripts/assets/$FOLDER || :
-          python3 scripts/spine_char.py scripts/assets/$FOLDER scripts/extracted/$FOLDER
+          python3 scripts/spine_deploy.py scripts/assets/$FOLDER scripts/extracted/$FOLDER
 
           mkdir -p spine/operator
           cp -r scripts/extracted/spine/operator/* spine/operator/ || :

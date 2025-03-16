@@ -13,7 +13,7 @@ for item in os.listdir(source_directory):
         print(f"Deleting file: {item}")
         os.remove(item_path)
         continue
-    
+
     # Remove .prefab from all filenames
     if item.endswith(".prefab"):
         new_filename = item.rsplit(".prefab", 1)[0]
