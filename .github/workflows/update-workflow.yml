@@ -249,7 +249,7 @@ jobs:
           source scripts/extract_ab.sh
 
           extract_ab "battle/prefabs/[uc]tokens.ab" "spine/deploy" "-t tex2d,textAsset -g none --log-level warning"
-          python3 scripts/spine_deploy.py scripts/extracted/spine/deploy
+          python3 scripts/spine_general.py scripts/extracted/spine/deploy
 
           mkdir -p spine/deploy
           cp -r scripts/extracted/spine/deploy/* spine/deploy/ || :
@@ -269,7 +269,7 @@ jobs:
           source scripts/extract_ab.sh
 
           extract_ab "battle/prefabs/enemies/enemy*.ab" "spine/enemy" "-t tex2d,textAsset -g none --log-level warning"
-          python3 scripts/spine_enemy.py scripts/extracted/spine/enemy
+          python3 scripts/spine_general.py scripts/extracted/spine/enemy
 
           mkdir -p spine/enemy
           cp -r scripts/extracted/spine/enemy/* spine/enemy/ || :
