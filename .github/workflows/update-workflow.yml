@@ -6,7 +6,7 @@ on:
       server:
         description: "Server to download assets from"
         required: true
-        type: string
+        type: choice
         options:
           - cn
           - en
