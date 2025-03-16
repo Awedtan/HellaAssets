@@ -253,6 +253,13 @@ jobs:
           cp -f scripts/download/$FILES scripts/assets/$FOLDER || :
           python3 scripts/spine_deploy.py scripts/assets/$FOLDER scripts/extracted/$FOLDER
 
+          FILES=skinpack/token*.ab
+          FOLDER=spine/deploy
+          mkdir -p scripts/assets/$FOLDER scripts/extracted/$FOLDER
+          cp -f scripts/apk/assets/AB/Android/$FILES scripts/assets/$FOLDER || :
+          cp -f scripts/download/$FILES scripts/assets/$FOLDER || :
+          python3 scripts/spine_deploy.py scripts/assets/$FOLDER scripts/extracted/$FOLDER
+
           mkdir -p spine/deploy
           cp -r scripts/extracted/spine/deploy/* spine/deploy/ || :
           git add spine/deploy/

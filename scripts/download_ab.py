@@ -55,7 +55,7 @@ for item in hot_update_list['abInfos']:
     hash = item['hash']
 
     if specific_downloads:
-        if filename not in specific_downloads:
+        if not any(specific in filename or specific == filename for specific in specific_downloads):
             continue
     elif any(x for x in old_hot_update_list['abInfos'] if x['name'] == filename and x['hash'] == hash):
         continue
