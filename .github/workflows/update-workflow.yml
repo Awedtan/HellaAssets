@@ -4,11 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       server:
-        description: 'Server to download assets from'
+        description: "Server to download assets from"
         required: true
-        type: string
+        type: choice
+        options:
+          - cn
+          - en
       specific_downloads:
-        description: 'Specific ABs to download'
+        description: "Specific ABs to download"
         required: false
         type: string
   workflow_call:
@@ -29,6 +32,7 @@ jobs:
     runs-on: self-hosted
     outputs: # https://stackoverflow.com/questions/70287603/dynamic-outputs-for-job-with-strategy-matrix
       branch-name: ${{ steps.checkout-branch.outputs.branch-name }}
+      deploy-spine-condition: ${{ steps.extract-deploy-spine.outputs.condition }}
       enemy-spine-condition: ${{ steps.extract-enemy-spine.outputs.condition }}
       operator-spine-condition: ${{ steps.extract-operator-spine.outputs.condition }}
       update-condition: ${{ steps.download-assets.outputs.condition }}
@@ -238,6 +242,26 @@ jobs:
               git commit -m "Skingroups assets"
               git push
           fi
+      - name: Extract deployable spine assets
+        if: steps.download-assets.outputs.extract == 'true'
+        id: extract-deploy-spine
+        run: |
+          source scripts/extract_ab.sh
+
+          extract_ab "battle/prefabs/[uc]tokens.ab" "spine/deploy" "-t tex2d,textAsset -g none --log-level warning"
+          python3 scripts/spine_general.py scripts/extracted/spine/deploy
+
+          mkdir -p spine/deploy
+          cp -r scripts/extracted/spine/deploy/* spine/deploy/ || :
+          git add spine/deploy/
+          if git diff-index --quiet HEAD --; then
+              echo "No changes to commit."
+              echo "condition=false" >> $GITHUB_OUTPUT
+          else
+              git commit -m "Deployable spine assets"
+              echo "condition=true" >> $GITHUB_OUTPUT
+              git push
+          fi
       - name: Extract enemy spine assets
         if: steps.download-assets.outputs.extract == 'true'
         id: extract-enemy-spine
@@ -245,7 +269,7 @@ jobs:
           source scripts/extract_ab.sh
 
           extract_ab "battle/prefabs/enemies/enemy*.ab" "spine/enemy" "-t tex2d,textAsset -g none --log-level warning"
-          python3 scripts/spine_enemy.py scripts/extracted/spine/enemy
+          python3 scripts/spine_general.py scripts/extracted/spine/enemy
 
           mkdir -p spine/enemy
           cp -r scripts/extracted/spine/enemy/* spine/enemy/ || :
@@ -329,6 +353,38 @@ jobs:
         run: pip install bson unitypy numpy pycryptodome flatbuffers
       - name: Patch ArkUnpacker to encode UTF-8
         run: (Get-Content ..\Ark-Unpacker\src\utils\GlobalMethods.py) -replace '\{text\}', '{text.encode()}' | Set-Content ..\Ark-Unpacker\src\utils\GlobalMethods.py
+      - name: Set up deployable spine inputs
+        if: needs.update.outputs.deploy-spine-condition == 'true'
+        run: |
+          @"
+          3
+          spine/deploy
+          ..\combined\deploy
+
+
+          0
+          "@ > ..\deploy.txt
+      - name: Apply deployable spine transparency
+        if: needs.update.outputs.deploy-spine-condition == 'true'
+        run: Get-Content ..\deploy.txt | python ..\Ark-Unpacker\Main.py
+      - name: Copy over combined deployable spines
+        if: needs.update.outputs.deploy-spine-condition == 'true'
+        run: Copy-Item -Path ..\combined\deploy\* -Destination spine/deploy -Recurse -Force
+      - name: Clean up files
+        if: needs.update.outputs.deploy-spine-condition == 'true'
+        run: Remove-Item .\ArkUnpackerLogs.log, .\ArkUnpackerConfig.json
+      - name: Commit deployable spine changes
+        if: needs.update.outputs.deploy-spine-condition == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add spine/deploy
+          if (git diff-index --quiet HEAD --) {
+            Write-Output "No changes to commit."
+          } else {
+            git commit -m "Deployable spine transparency"
+            git push
+          }
       - name: Set up enemy spine inputs
         if: needs.update.outputs.enemy-spine-condition == 'true'
         run: |
