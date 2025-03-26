@@ -1,6 +1,6 @@
 # HellaAssets
 
-![update](https://github.com/Awedtan/HellaAssets/actions/workflows/update.yml/badge.svg)
+![update status](https://github.com/Awedtan/HellaAssets/actions/workflows/update.yml/badge.svg)
 
 > GitHub is my favourite CDN
 

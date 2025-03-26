@@ -1,12 +1,7 @@
-name: Scheduled update
+name: Update assets
 
 on:
   workflow_dispatch:
-    inputs:
-      specific_downloads:
-        description: 'Specific ABs to download'
-        required: false
-        default: ''
   schedule:
     - cron:  '0 */6 * * *'
 
