@@ -88,10 +88,9 @@ for file in os.listdir(srcDir):
                 save_assets(skelFile, atlasFile, alphaTex, mainTex, f'{buiDir}/{mainTex.name}')
 
         if count == 0:
-            print(f'Nothing was found for: {file}')
-    except:
-        print(f'Error: {file}')
-        break
+            print(f'Nothing was found for {file}')
+    except Exception as e:
+        print(f'Error for {file}: {e}')
 
 
 # Front only spine assets tree

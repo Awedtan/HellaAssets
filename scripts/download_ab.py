@@ -3,6 +3,7 @@ import json
 import os
 import time
 import requests
+from concurrent.futures import ThreadPoolExecutor
 
 # NETWORK_CONFIG=$(curl -s https://ak-conf.hypergryph.com/config/prod/b/network_config | jq -r .content)
 # NETWORK_URLS=$(echo $NETWORK_CONFIG | jq -r .configs.$(echo $NETWORK_CONFIG | jq -r .funcVer).network)
@@ -20,7 +21,8 @@ parser = argparse.ArgumentParser(description='Download Arknights assets.')
 parser.add_argument('-s', '--server', choices=['cn', 'en'], default='cn', required=False)
 parser.add_argument('-d', '--download-dir', default='download')
 parser.add_argument('-hu', '--hot-update-list', default='hot_update_list_cn.json')
-parser.add_argument('-sd', '--specify-download', default='')
+parser.add_argument('-fd', '--force-download', default='')
+parser.add_argument('-sd', '--skip-download', default='')
 args = parser.parse_args()
 
 server_urls = {
@@ -30,7 +32,8 @@ server_urls = {
 server_url = server_urls[args.server]
 download_dir = args.download_dir
 hot_update_list_file = args.hot_update_list
-specific_downloads = args.specify_download.split(',') if len(args.specify_download) > 0 else []
+force_downloads = args.force_download.split(';') if len(args.force_download) > 0 else []
+skip_downloads = args.skip_download.split(';') if len(args.skip_download) > 0 else []
 
 network_config = requests.get(server_url).json()
 network_contents = json.loads(network_config['content'])
@@ -44,23 +47,19 @@ else:
     with open(hot_update_list_file, 'r') as f:
         old_hot_update_list = json.load(f)
 
-if (old_hot_update_list['versionId'] == res_version and not specific_downloads):
+if (old_hot_update_list['versionId'] == res_version and not force_downloads):
     print('Up to date.')
     exit(0)
 
-os.makedirs(download_dir, exist_ok=True)
 hot_update_list = requests.get(f'{assets_url}/hot_update_list.json').json()
-for item in hot_update_list['abInfos']:
+with open(hot_update_list_file, 'w') as f:
+    f.write(json.dumps(hot_update_list))
+    print(f'Updated {hot_update_list_file}: {old_hot_update_list["versionId"]} -> {res_version}')
+
+
+def download_file(item, assets_url, download_dir):
     filename = item['name']
-    hash = item['hash']
-
-    if specific_downloads:
-        if not any(specific in filename or specific == filename for specific in specific_downloads):
-            continue
-    elif any(x for x in old_hot_update_list['abInfos'] if x['name'] == filename and x['hash'] == hash):
-        continue
-
-    print(filename)
+    print(round(item['totalSize']/1000/1000, 1), 'MB', filename)
     filename = filename.replace('/', '_').replace('#', '__').split('.')[0] + '.dat'
     retries = 5
     for attempt in range(retries):
@@ -69,7 +68,7 @@ for item in hot_update_list['abInfos']:
             response.raise_for_status()
             with open(f'{download_dir}/{filename}', 'wb') as f:
                 f.write(response.content)
-            os.system(f'unzip -q {download_dir}/{filename} -d {download_dir}/')
+            os.system(f'unzip -q "{download_dir}/{filename}" -d "{download_dir}/"')
             os.remove(f'{download_dir}/{filename}')
             break
         except requests.exceptions.RequestException as e:
@@ -77,8 +76,26 @@ for item in hot_update_list['abInfos']:
             if attempt == retries - 1:
                 print(f'Failed to download {filename} after {retries} attempts.')
             else:
-                time.sleep(attempt + 1)
+                time.sleep(attempt * 2 + 1)
 
-with open(hot_update_list_file, 'w') as f:
-    f.write(json.dumps(hot_update_list))
-    print(f'Updated {hot_update_list_file}: {old_hot_update_list["versionId"]} -> {res_version}')
+
+os.makedirs(download_dir, exist_ok=True)
+with ThreadPoolExecutor(max_workers=2) as executor:
+    for item in hot_update_list['abInfos']:
+        filename = item['name']
+        hash = item['hash']
+
+        is_force_file = any(force in filename or force == filename for force in force_downloads)
+        is_skip_file = any(x for x in skip_downloads if x in filename)
+        is_old_file = any(x for x in old_hot_update_list['abInfos'] if x['name'] == filename and x['hash'] == hash)
+
+        if is_force_file:
+            pass
+        else:
+            if is_skip_file:
+                print('Skipping', round(item['totalSize']/1000/1000, 1), 'MB', filename)
+                continue
+            if is_old_file:
+                continue
+
+        executor.submit(download_file, item, assets_url, download_dir)
