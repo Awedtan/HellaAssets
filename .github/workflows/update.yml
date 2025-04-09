@@ -1,0 +1,22 @@
+name: Update assets
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '0 */6 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: Update assets
+    strategy:
+      fail-fast: false
+      matrix:
+        server: [cn, en]
+    uses: ./.github/workflows/update-workflow.yml
+    secrets: inherit
+    with:
+      server: ${{ matrix.server }}
+      specific_downloads: ${{ github.event.inputs.specific_downloads }}
