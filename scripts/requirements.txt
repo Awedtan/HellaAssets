@@ -2,4 +2,4 @@ attrs==25.1.0 # default is too outdated, get any newer version
 numpy
 playwright
 requests
-unitypy==1.10.14 # dont remember why specifically this version but it works i guess
+unitypy==1.22.2 # needed for custom compression algos
