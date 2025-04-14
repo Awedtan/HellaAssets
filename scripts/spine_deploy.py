@@ -55,8 +55,8 @@ def process_spine(charATree, direction=None):
 
 def save_assets(skelFile, atlasFile, alphaTex, mainTex, dirPath):
     os.makedirs(dirPath, exist_ok=True)
-    open(f'{dirPath}/{skelFile["m_Name"]}', 'wb').write(skelFile['m_Script'].encode('utf-16', 'surrogatepass'))
-    open(f'{dirPath}/{atlasFile["m_Name"]}', 'wb').write(atlasFile['m_Script'].encode('utf-16', 'surrogatepass'))
+    open(f'{dirPath}/{skelFile["m_Name"]}', 'wb').write(skelFile['m_Script'].encode('utf-8', 'surrogateescape'))
+    open(f'{dirPath}/{atlasFile["m_Name"]}', 'wb').write(atlasFile['m_Script'].encode('utf-8', 'surrogateescape'))
     if alphaTex is not None:
         alphaTex.image.save(f'{dirPath}/{alphaTex.m_Name}.png')
     mainTex.image.save(f'{dirPath}/{mainTex.m_Name}.png')
