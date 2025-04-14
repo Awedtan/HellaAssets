@@ -395,8 +395,8 @@ jobs:
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
-                  git ls-files --others --exclude-standard spine/deploy/ -z | xargs -0 git add
-                  if (git diff --cached --quiet) {
+                  git add spine/deploy/ || :
+                  if (git diff-index --quiet HEAD --) {
                     Write-Output "No changes to commit."
                   } else {
                     git commit -m "Deployable spine transparency"
@@ -427,8 +427,8 @@ jobs:
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
-                  git ls-files --others --exclude-standard spine/enemy/ -z | xargs -0 git add
-                  if (git diff --cached --quiet) {
+                  git add spine/enemy/ || :
+                  if (git diff-index --quiet HEAD --) {
                     Write-Output "No changes to commit."
                   } else {
                     git commit -m "Enemy spine transparency"
@@ -459,8 +459,8 @@ jobs:
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
-                  git ls-files --others --exclude-standard spine/operator/ -z | xargs -0 git add
-                  if (git diff --cached --quiet) {
+                  git add spine/operator/ || :
+                  if (git diff-index --quiet HEAD --) {
                     Write-Output "No changes to commit."
                   } else {
                     git commit -m "Operator spine transparency"
