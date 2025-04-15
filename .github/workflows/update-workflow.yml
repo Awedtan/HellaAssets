@@ -10,10 +10,21 @@ on:
                 options:
                     - cn
                     - en
+            skip_apk_update:
+                description: "Skip APK update"
+                required: false
+                type: boolean
+                default: false
+            modify_assets:
+                description: "Assets to overwrite"
+                required: false
+                type: string
+                default: ""
             force_downloads:
                 description: "ABs to force download"
                 required: false
                 type: string
+                default: ""
             skip_downloads:
                 description: "ABs to skip downloading"
                 required: false
@@ -88,69 +99,65 @@ jobs:
                     LOCAL_URL=$(cat apk_url_${{ inputs.server }}.txt)
                   fi
 
-                  python3 download_apk.py -s ${{ inputs.server }} -ou "$LOCAL_URL" | tee apk.out
+                  if [[ "${{ inputs.skip_apk_update }}" == "true" ]]; then
+                    wget "$LOCAL_URL" -O ${{ inputs.server }}.apk
+                  else
+                    python3 download_apk.py -s ${{ inputs.server }} -ou "$LOCAL_URL" | tee apk.out
 
-                  if [[ $(cat apk.out) != *"Up to date"* ]]; then
-                    unzip -q ${{ inputs.server }}.apk -d apk
-                    rm ${{ inputs.server }}.apk
-                    echo $REMOTE_URL > apk_url_${{ inputs.server }}.txt
+                    if [[ $(cat apk.out) != *"Up to date"* ]]; then
+                      unzip -q ${{ inputs.server }}.apk -d apk
+                      rm ${{ inputs.server }}.apk
+                      echo $REMOTE_URL > apk_url_${{ inputs.server }}.txt
+                    fi
                   fi
             - name: Checkout branch
               if: steps.download-assets.outputs.condition == 'true'
               id: checkout-branch
               working-directory: scripts
               run: |
+                  source utils.sh
+
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
                   git config --global http.postBuffer 524288000
                   VERSION=$(cat hot_update_list_${{ inputs.server }}.json | jq -r .versionId)
                   BRANCH_NAME=${{ inputs.server }}-$VERSION
                   git checkout -b $BRANCH_NAME
-                  git add hot_update_list_${{ inputs.server }}.json  || :
-                  git add apk_url_${{ inputs.server }}.txt  || :
-                  if git diff --cached --quiet; then
-                    echo "No changes to commit."
-                  else
-                    git commit -am "update: $BRANCH_NAME"
-                  fi
+                  git_commit "true" "." "update: $BRANCH_NAME"
                   git push -f --set-upstream origin $BRANCH_NAME
                   echo "branch-name=$BRANCH_NAME" >> $GITHUB_OUTPUT
             - name: Extract enemy assets
               if: steps.download-assets.outputs.extract == 'true'
               run: |
-                  source scripts/extract_ab.sh
+                  source scripts/utils.sh
 
                   extract_ab "spritepack/icon_enemies_*.ab" "enemy" "-t sprite -g none --log-level warning"
 
                   mkdir -p enemy
                   cp -r scripts/extracted/enemy/* enemy/ || :
-                  git ls-files --others --exclude-standard enemy/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                  else
-                      git commit -m "Enemy assets"
-                      git push
+
+                  git_commit "${{ inputs.modify_assets }}" "enemy" "Enemy assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
                   fi
             - name: Extract item assets
               if: steps.download-assets.outputs.extract == 'true'
               run: |
-                  source scripts/extract_ab.sh
+                  source scripts/utils.sh
 
                   extract_ab "spritepack/ui_item_*.ab" "items" "-t sprite -g none --log-level warning"
 
                   mkdir -p items
                   cp -r scripts/extracted/items/* items/ || :
-                  git ls-files --others --exclude-standard items/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                  else
-                      git commit -m "Item assets"
-                      git push
+
+                  git_commit "${{ inputs.modify_assets }}" "items" "Item assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
                   fi
             - name: Extract operator assets
               if: steps.download-assets.outputs.extract == 'true'
               run: |
-                  source scripts/extract_ab.sh
+                  source scripts/utils.sh
 
                   extract_ab "chararts/*.ab" "operator/arts" "--filter-by-text characters -t sprite -g none --log-level warning"
                   extract_ab "skinpack/*.ab" "operator/arts" "--filter-by-text characters -t sprite -g none --log-level warning"
@@ -172,33 +179,55 @@ jobs:
 
                   mkdir -p operator/
                   cp -r scripts/extracted/operator/* operator/ || :
-                  git ls-files --others --exclude-standard operator/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
+
+                  if [[ "${{ inputs.modify_assets }}" == *"operator/arts"* ]]; then
+                    for i in {0..9}; do
+                      git add operator/arts/char_${i}* || :
+                      if git diff --cached --quiet; then
+                        echo "No changes to commit - char_${i}*"
+                      else
+                        git commit -m "Operator assets - arts/char_${i}"
+                        git push
+                      fi
+                    done
                   else
-                      git commit -m "Operator assets"
-                      git push
+                    for i in {0..9}; do
+                      FILES=$(git ls-files --others --exclude-standard "$FOLDER" | grep "^char_${i}")
+                      if [ -n "$FILES" ]; then
+                        echo "$FILES" | xargs git add
+                        git commit -m "Operator assets - arts/char_${i}"
+                        git push
+                      else
+                        echo "No changes to commit - char_${i}*"
+                      fi
+                    done
+                  fi
+                  git_commit "${{ inputs.modify_assets }}" "operator/arts" "Operator assets - arts"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
+                  fi
+                  git_commit "${{ inputs.modify_assets }}" "operator" "Operator assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
                   fi
             - name: Extract roguelike assets
               if: steps.download-assets.outputs.extract == 'true'
               run: |
-                  source scripts/extract_ab.sh
+                  source scripts/utils.sh
 
                   extract_ab "spritepack/ui_roguelike*.ab" "rogue/items" "-t sprite -g none --log-level warning"
 
                   mkdir -p rogue
                   cp -r scripts/extracted/rogue/* rogue/ || :
-                  git ls-files --others --exclude-standard rogue/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                  else
-                      git commit -m "Roguelike assets"
-                      git push
+
+                  git_commit "${{ inputs.modify_assets }}" "rogue" "Roguelike assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
                   fi
             - name: Extract sandbox assets
               if: steps.download-assets.outputs.extract == 'true'
               run: |
-                  source scripts/extract_ab.sh
+                  source scripts/utils.sh
 
                   extract_ab "ui/sandboxperm/[uc]common.ab" "sandbox/items" "--filter-by-text itemicon -t sprite -g none --log-level warning"
                   extract_ab "spritepack/sandbox*.ab" "sandbox/stages" "-t sprite -g none --log-level warning"
@@ -206,17 +235,15 @@ jobs:
 
                   mkdir -p sandbox
                   cp -r scripts/extracted/sandbox/* sandbox/ || :
-                  git ls-files --others --exclude-standard sandbox/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                  else
-                      git commit -m "Sandbox assets"
-                      git push
+
+                  git_commit "${{ inputs.modify_assets }}" "sandbox" "Sandbox assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
                   fi
             - name: Extract skingroups assets
               if: steps.download-assets.outputs.extract == 'true'
               run: |
-                  source scripts/extract_ab.sh
+                  source scripts/utils.sh
 
                   extract_ab "ui/skin_groups.ab" "skingroups" "-t sprite -g none --log-level warning"
 
@@ -241,17 +268,17 @@ jobs:
 
                   mkdir -p skingroups
                   cp -r scripts/extracted/skingroups/* skingroups/ || :
-                  git ls-files --others --exclude-standard skingroups/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                  else
-                      git commit -m "Skingroups assets"
-                      git push
+
+                  git_commit "${{ inputs.modify_assets }}" "skingroups" "Skingroups assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
                   fi
             - name: Extract deployable spine assets
               if: steps.download-assets.outputs.extract == 'true'
               id: extract-deploy-spine
               run: |
+                  source scripts/utils.sh
+
                   FILES=battle/prefabs/[uc]tokens.ab
                   FOLDER=spine/deploy
                   mkdir -p scripts/assets/$FOLDER scripts/extracted/$FOLDER
@@ -268,39 +295,39 @@ jobs:
 
                   mkdir -p spine/deploy
                   cp -r scripts/extracted/spine/deploy/* spine/deploy/ || :
-                  git ls-files --others --exclude-standard spine/deploy/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                      echo "condition=false" >> $GITHUB_OUTPUT
+
+                  git_commit "${{ inputs.modify_assets }}" "spine/deploy" "Deployable spine assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    echo "condition=true" >> $GITHUB_OUTPUT
+                    git push
                   else
-                      git commit -m "Deployable spine assets"
-                      echo "condition=true" >> $GITHUB_OUTPUT
-                      git push
+                    echo "condition=false" >> $GITHUB_OUTPUT
                   fi
             - name: Extract enemy spine assets
               if: steps.download-assets.outputs.extract == 'true'
               id: extract-enemy-spine
               run: |
-                  source scripts/extract_ab.sh
+                  source scripts/utils.sh
 
                   extract_ab "battle/prefabs/enemies/enemy*.ab" "spine/enemy" "-t tex2d,textAsset -g none --log-level warning"
                   python3 scripts/spine_enemy.py scripts/extracted/spine/enemy
 
                   mkdir -p spine/enemy
                   cp -r scripts/extracted/spine/enemy/* spine/enemy/ || :
-                  git ls-files --others --exclude-standard spine/enemy/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                      echo "condition=false" >> $GITHUB_OUTPUT
+
+                  git_commit "${{ inputs.modify_assets }}" "spine/enemy" "Enemy spine assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    echo "condition=true" >> $GITHUB_OUTPUT
+                    git push
                   else
-                      git commit -m "Enemy spine assets"
-                      echo "condition=true" >> $GITHUB_OUTPUT
-                      git push
+                    echo "condition=false" >> $GITHUB_OUTPUT
                   fi
             - name: Extract operator spine assets
               if: steps.download-assets.outputs.extract == 'true'
               id: extract-operator-spine
               run: |
+                  source scripts/utils.sh
+
                   FILES=chararts/char*.ab
                   FOLDER=spine/operator
                   mkdir -p scripts/assets/$FOLDER scripts/extracted/$FOLDER
@@ -317,19 +344,18 @@ jobs:
 
                   mkdir -p spine/operator
                   cp -r scripts/extracted/spine/operator/* spine/operator/ || :
-                  git ls-files --others --exclude-standard spine/operator/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                      echo "condition=false" >> $GITHUB_OUTPUT
+
+                  git_commit "${{ inputs.modify_assets }}" "spine/operator" "Operator spine assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    echo "condition=true" >> $GITHUB_OUTPUT
+                    git push
                   else
-                      git commit -m "Operator spine assets"
-                      echo "condition=true" >> $GITHUB_OUTPUT
-                      git push
+                    echo "condition=false" >> $GITHUB_OUTPUT
                   fi
             - name: Extract stage assets
               if: steps.download-assets.outputs.extract == 'true'
               run: |
-                  source scripts/extract_ab.sh
+                  source scripts/utils.sh
 
                   extract_ab "arts/ui/stage_mappreview*.ab" "stages" "-t sprite -g none --log-level warning"
 
@@ -339,12 +365,10 @@ jobs:
 
                   mkdir -p stages
                   cp -r scripts/extracted/stages/* stages/ || :
-                  git ls-files --others --exclude-standard stages/ -z | xargs -0 git add
-                  if git diff --cached --quiet; then
-                      echo "No changes to commit."
-                  else
-                      git commit -m "Stage assets"
-                      git push
+
+                  git_commit "${{ inputs.modify_assets }}" "stages" "Stage assets"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
                   fi
 
     spine:
