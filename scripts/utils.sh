@@ -19,7 +19,7 @@ git_commit() {
     rm -f /tmp/git_commit
 
     if [[ "$MODIFY" == *"$FILES"* ]]; then
-        git add "$FILES" || :
+        git add $FILES || :
         if git diff --cached --quiet; then
             echo "No changes to commit."
             echo 0 | tee /tmp/git_commit
