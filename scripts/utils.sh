@@ -13,13 +13,13 @@ extract_ab() {
 
 git_commit() {
     local MODIFY=$1
-    local FILES=$2
+    local FOLDER=$2
     local COMMIT_MSG=$3
 
     rm -f /tmp/git_commit
 
-    if [[ "$MODIFY" == *"$FILES"* ]]; then
-        git add $FILES || :
+    if [[ "$MODIFY" == *"$FOLDER"* ]]; then
+        git add $FOLDER || :
         if git diff --cached --quiet; then
             echo "No changes to commit."
             echo 0 | tee /tmp/git_commit
@@ -28,7 +28,7 @@ git_commit() {
             echo 1 | tee /tmp/git_commit
         fi
     else
-        git ls-files --others --exclude-standard $FILES -z | xargs -0 git add
+        git ls-files --others --exclude-standard $FOLDER -z | xargs -0 git add
         if git diff --cached --quiet; then
             echo "No changes to commit."
             echo 0 | tee /tmp/git_commit

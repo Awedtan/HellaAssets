@@ -180,25 +180,27 @@ jobs:
                   mkdir -p operator/
                   cp -r scripts/extracted/operator/* operator/ || :
 
-                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_0*" "Operator assets - arts/char_0"
-                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
-                    git push
-                  fi
-                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_1*" "Operator assets - arts/char_1"
-                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
-                    git push
-                  fi
-                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_2*" "Operator assets - arts/char_2"
-                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
-                    git push
-                  fi
-                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_3*" "Operator assets - arts/char_3"
-                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
-                    git push
-                  fi
-                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_4*" "Operator assets - arts/char_4"
-                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
-                    git push
+                  if [[ ${{ inputs.modify_assets }} == *"operator/arts"* ]]; then
+                    for i in {0..9}; do
+                      git add char_${i}*
+                      if git diff --cached --quiet; then
+                        echo "No changes to commit - char_${i}*"
+                      else
+                        git commit -m "Operator assets - arts/char_${i}"
+                        git push
+                      fi
+                    done
+                  else
+                    for i in {0..9}; do
+                      FILES=$(git ls-files --others --exclude-standard "$FOLDER" | grep "^char_${i}")
+                      if [ -n "$FILES" ]; then
+                        echo "$FILES" | xargs git add
+                        git commit -m "Operator assets - arts/char_${i}"
+                        git push
+                      else
+                        echo "No changes to commit - char_${i}*"
+                      fi
+                    done
                   fi
                   git_commit "${{ inputs.modify_assets }}" "operator/arts" "Operator assets - arts"
                   if [ $(cat /tmp/git_commit) -eq 1 ]; then
