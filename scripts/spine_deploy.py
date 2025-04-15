@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import UnityPy
 from UnityPy.enums.BundleFile import CompressionFlags
@@ -55,11 +56,23 @@ def process_spine(charATree, direction=None):
 
 def save_assets(skelFile, atlasFile, alphaTex, mainTex, dirPath):
     os.makedirs(dirPath, exist_ok=True)
-    open(f'{dirPath}/{skelFile["m_Name"]}', 'wb').write(skelFile['m_Script'].encode('utf-8', 'surrogateescape'))
-    open(f'{dirPath}/{atlasFile["m_Name"]}', 'wb').write(atlasFile['m_Script'].encode('utf-8', 'surrogateescape'))
+
+    skelFileBytes = skelFile['m_Script'].encode('utf-8', 'surrogateescape')
+    atlasFileBytes = atlasFile['m_Script'].encode('utf-8', 'surrogateescape')
+    open(f'{dirPath}/{skelFile["m_Name"]}', 'wb').write(skelFileBytes)
+    open(f'{dirPath}/{atlasFile["m_Name"]}', 'wb').write(atlasFileBytes)
+
+    width = mainTex.image.width
+    height = mainTex.image.height
+    pattern = re.compile(rb'size:\s*(\d+),(\d+)')
+    for match in pattern.finditer(atlasFileBytes):
+        debug_print(f'Found atlas size: {match.group(1).decode()}x{match.group(2).decode()}')
+        width = int(match.group(1).decode())
+        height = int(match.group(2).decode())
+        break
     if alphaTex is not None:
-        alphaTex.image.save(f'{dirPath}/{alphaTex.m_Name}.png')
-    mainTex.image.save(f'{dirPath}/{mainTex.m_Name}.png')
+        alphaTex.image.resize((width, height)).save(f'{dirPath}/{alphaTex.m_Name}.png')
+    mainTex.image.resize((width, height)).save(f'{dirPath}/{mainTex.m_Name}.png')
 
 
 for file in os.listdir(srcDir):
