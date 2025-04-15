@@ -182,7 +182,7 @@ jobs:
 
                   if [[ "${{ inputs.modify_assets }}" == *"operator/arts"* ]]; then
                     for i in {0..9}; do
-                      git add operator/arts/char_${i}*
+                      git add operator/arts/char_${i}* || :
                       if git diff --cached --quiet; then
                         echo "No changes to commit - char_${i}*"
                       else
