@@ -180,7 +180,7 @@ jobs:
                   mkdir -p operator/
                   cp -r scripts/extracted/operator/* operator/ || :
 
-                  if [[ ${{ inputs.modify_assets }} == *"operator/arts"* ]]; then
+                  if [[ "${{ inputs.modify_assets }}" == *"operator/arts"* ]]; then
                     for i in {0..9}; do
                       git add char_${i}*
                       if git diff --cached --quiet; then
