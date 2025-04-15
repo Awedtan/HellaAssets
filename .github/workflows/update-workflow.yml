@@ -180,6 +180,30 @@ jobs:
                   mkdir -p operator/
                   cp -r scripts/extracted/operator/* operator/ || :
 
+                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_0*" "Operator assets - arts/char_0"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
+                  fi
+                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_1*" "Operator assets - arts/char_1"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
+                  fi
+                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_2*" "Operator assets - arts/char_2"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
+                  fi
+                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_3*" "Operator assets - arts/char_3"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
+                  fi
+                  git_commit "${{ inputs.modify_assets }}" "operator/arts/char_4*" "Operator assets - arts/char_4"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
+                  fi
+                  git_commit "${{ inputs.modify_assets }}" "operator/arts" "Operator assets - arts"
+                  if [ $(cat /tmp/git_commit) -eq 1 ]; then
+                    git push
+                  fi
                   git_commit "${{ inputs.modify_assets }}" "operator" "Operator assets"
                   if [ $(cat /tmp/git_commit) -eq 1 ]; then
                     git push
