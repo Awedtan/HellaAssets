@@ -45,7 +45,7 @@ def main():
     }
     server_url = server_urls[args.server]
     dest = args.dest
-    old_list = args.old_list
+    old_list_file = args.old_list
     always_downloads = args.always.split(';') if len(args.always) > 0 else []
     skip_downloads = args.skip.split(';') if len(args.skip) > 0 else []
 
@@ -55,19 +55,19 @@ def main():
     res_version = requests.get(network_urls['hv'].replace('{0}', 'Android')).json()['resVersion']
     assets_url = f'{network_urls["hu"]}/Android/assets/{res_version}'
 
-    if not os.path.exists(old_list) or os.stat(old_list).st_size == 0:
+    if not os.path.exists(old_list_file) or os.stat(old_list_file).st_size == 0:
         old_list = {'versionId': '', 'abInfos': []}
     else:
-        with open(old_list, 'r') as f:
+        with open(old_list_file, 'r') as f:
             old_list = json.load(f)
             if (old_list['versionId'] == res_version and not always_downloads):
                 print('Up to date.')
                 exit(0)
 
     new_list = requests.get(f'{assets_url}/hot_update_list.json').json()
-    with open(old_list, 'w') as f:
+    with open(old_list_file, 'w') as f:
         f.write(json.dumps(new_list))
-        print(f'Updated {old_list}: {old_list["versionId"]} -> {res_version}')
+        print(f'Updated {old_list_file}: {old_list["versionId"]} -> {res_version}')
 
     os.makedirs(dest, exist_ok=True)
     with ThreadPoolExecutor(max_workers=2) as executor:

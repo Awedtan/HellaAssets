@@ -85,6 +85,10 @@ jobs:
             --skip "${{ inputs.skip_downloads }}"                \
           | tee temp/update.out
 
+          if [[ "${PIPESTATUS}" -ne 0 ]]; then
+            exit 1
+          fi
+
           if [[ $(cat temp/update.out) == *"Up to date"* ]]; then
             echo "condition=false" >> $GITHUB_OUTPUT
           else
@@ -112,6 +116,10 @@ jobs:
               --dest temp/download          \
               --old-url "$LOCAL_URL"        \
             | tee temp/apk.out
+
+            if [[ "${PIPESTATUS}" -ne 0 ]]; then
+              exit 1
+            fi
 
             if [[ $(cat temp/apk.out) != *"Up to date"* ]]; then
               unzip -q temp/download/${{ inputs.server }}.apk -d temp/apk
