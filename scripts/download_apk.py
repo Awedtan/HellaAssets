@@ -1,12 +1,14 @@
+#!/usr/bin/env python3
+
 import argparse
+from playwright.sync_api import sync_playwright
 import re
 import requests
-from playwright.sync_api import sync_playwright
 import sys
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--server', choices=['cn', 'en'], default='cn')
+parser.add_argument('--server', choices=['cn', 'en'], default='cn')
 parser.add_argument('-ou', '--old-url')
 args = parser.parse_args()
 
