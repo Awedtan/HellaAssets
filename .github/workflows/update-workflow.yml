@@ -70,7 +70,7 @@ jobs:
           playwright install-deps
           rm -f temp && mkdir temp
           wget -nv https://github.com/aelurum/AssetStudio/releases/download/ak-v1.2.1/ArknightsStudioCLI-net8-Portable.v1.2.1.zip -O temp/ArknightsStudioCLI.zip
-          unzip -q temp/ArknightsStudioCLI.zip -d temp
+          unzip -q temp/ArknightsStudioCLI.zip -d temp/ArknightsStudioCLI
           rm -f temp/ArknightsStudioCLI.zip
           echo "ARKSTUDIOCLI=$(pwd)/temp/ArknightsStudioCLI/ArknightsStudioCLI.dll" >> "$GITHUB_ENV"
       - name: Download assets
