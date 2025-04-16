@@ -180,6 +180,9 @@ jobs:
                   mkdir -p operator/
                   cp -r scripts/extracted/operator/* operator/ || :
 
+                  # operator/arts is over 3.5 GB in size, github push limit is 2 GB
+                  # so repeatedly commit and push a subset of files to stay under the limit
+                  # this only applies if modified assets are allowed to be added, otherwise assume changes will stay under 2 GB
                   if [[ "${{ inputs.modify_assets }}" == *"operator/arts"* ]]; then
                     for i in {0..9}; do
                       git add operator/arts/char_${i}* || :
@@ -188,17 +191,6 @@ jobs:
                       else
                         git commit -m "Operator assets - arts/char_${i}"
                         git push
-                      fi
-                    done
-                  else
-                    for i in {0..9}; do
-                      FILES=$(git ls-files --others --exclude-standard "$FOLDER" | grep "^char_${i}")
-                      if [ -n "$FILES" ]; then
-                        echo "$FILES" | xargs git add
-                        git commit -m "Operator assets - arts/char_${i}"
-                        git push
-                      else
-                        echo "No changes to commit - char_${i}*"
                       fi
                     done
                   fi
