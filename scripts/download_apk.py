@@ -1,19 +1,14 @@
+#!/usr/bin/env python3
+
 import argparse
+import os
+from playwright.sync_api import sync_playwright
 import re
 import requests
-from playwright.sync_api import sync_playwright
 import sys
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--server', choices=['cn', 'en'], default='cn')
-parser.add_argument('-ou', '--old-url')
-args = parser.parse_args()
-
-user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.81"
-
-
-def get_apk_url(server):
+def get_apk_url(server, user_agent):
     retries = 5
     for attempt in range(retries):
         try:
@@ -48,14 +43,15 @@ def get_apk_url(server):
                 exit(1)
 
 
-def download_apk(server, url):
+def download_apk(server, url, dest, user_agent):
     retries = 5
     for attempt in range(retries):
         try:
             headers = {'User-Agent': user_agent}
             response = requests.get(url, headers=headers)
             response.raise_for_status()
-            with open(f'{server}.apk', 'wb') as f:
+            os.makedirs(dest, exist_ok=True)
+            with open(f'{dest}/{server}.apk', 'wb') as f:
                 f.write(response.content)
             break
         except requests.exceptions.RequestException as e:
@@ -65,12 +61,24 @@ def download_apk(server, url):
                 exit(1)
 
 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--server', type=str, dest='server', choices=['cn', 'en'], required=True, help='Server to download from.')
+    parser.add_argument('--dest', type=str, dest='dest', default='download', help='Directory to download APK file into.')
+    parser.add_argument('--old-url', type=str, dest='old_url', default='', help='Old APK URL to compare against.')
+    args = parser.parse_args()
+
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.81"
+
+    apk_url = get_apk_url(args.server, user_agent)
+    print(apk_url)
+
+    if args.old_url and apk_url == args.old_url:
+        print('Up to date.')
+        exit()
+
+    download_apk(args.server, apk_url, args.dest, user_agent)
+
+
 if __name__ == "__main__":
-    apk_url = get_apk_url(args.server)
-    if args.old_url:
-        if apk_url == args.old_url:
-            print('Up to date.', file=sys.stdout)
-            exit()
-    print(apk_url, file=sys.stdout)
-    download_apk(args.server, apk_url)
-    exit()
+    main()
