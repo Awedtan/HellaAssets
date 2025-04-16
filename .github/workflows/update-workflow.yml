@@ -139,7 +139,12 @@ jobs:
           VERSION=$(cat hot_update_list_${{ inputs.server }}.json | jq -r .versionId)
           BRANCH_NAME=${{ inputs.server }}-$VERSION
           git checkout -b $BRANCH_NAME
-          git_commit "true" "." "update: $BRANCH_NAME"
+          git add . || :
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "update: $BRANCH_NAME"
+          fi
           git push -f --set-upstream origin $BRANCH_NAME
           echo "branch-name=$BRANCH_NAME" >> $GITHUB_OUTPUT
       - name: Extract enemy assets
