@@ -5,10 +5,10 @@ extract_ab() {
     local FOLDER=$2
     local OPTIONS=$3
 
-    mkdir -p scripts/assets/$FOLDER scripts/extracted/$FOLDER
-    cp -f scripts/apk/assets/AB/Android/$FILES scripts/assets/$FOLDER || :
-    cp -f scripts/download/$FILES scripts/assets/$FOLDER || :
-    dotnet $ARKSTUDIOCLI scripts/assets/$FOLDER $OPTIONS -o scripts/extracted/$FOLDER
+    mkdir -p scripts/temp/assets/$FOLDER scripts/temp/extracted/$FOLDER
+    cp -f scripts/temp/apk/assets/AB/Android/$FILES scripts/temp/assets/$FOLDER || :
+    cp -f scripts/temp/download/$FILES scripts/temp/assets/$FOLDER || :
+    dotnet $ARKSTUDIOCLI scripts/temp/assets/$FOLDER $OPTIONS -o scripts/temp/extracted/$FOLDER
 }
 
 git_commit() {

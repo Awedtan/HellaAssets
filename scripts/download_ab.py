@@ -32,8 +32,8 @@ def download_file(item, assets_url, download_dir):
 
 def main():
     parser = argparse.ArgumentParser(description='CLI tool to download Arknights "hot update" asset files.')
-    parser.add_argument('--server', type=str, dest='target', choices=['cn', 'en'], required=True, help='Server to download from.')
-    parser.add_argument('--dest', type=str, dest='dest', default='download', help='Directory to download files to.')
+    parser.add_argument('--server', type=str, dest='server', choices=['cn', 'en'], required=True, help='Server to download from.')
+    parser.add_argument('--dest', type=str, dest='dest', default='download', help='Directory to download files into.')
     parser.add_argument('--old-list', type=str, dest='old_list', default='', help='Path to old hot update list.')
     parser.add_argument('--always', type=str, dest='always', default='', help='Semi-colon separated list of filenames to always download. Uses substring matching. Takes precedence over --skip-download.')
     parser.add_argument('--skip', type=str, dest='skip', default='', help='Semi-colon separated list of filenames to skip. Uses substring matching.')
@@ -44,8 +44,8 @@ def main():
         'en': 'https://ak-conf.arknights.global/config/prod/official/network_config'
     }
     server_url = server_urls[args.server]
-    dest_dir = args.dest
-    hot_update_list_file = args.old_list
+    dest = args.dest
+    old_list = args.old_list
     always_downloads = args.always.split(';') if len(args.always) > 0 else []
     skip_downloads = args.skip.split(';') if len(args.skip) > 0 else []
 
@@ -55,29 +55,29 @@ def main():
     res_version = requests.get(network_urls['hv'].replace('{0}', 'Android')).json()['resVersion']
     assets_url = f'{network_urls["hu"]}/Android/assets/{res_version}'
 
-    if not os.path.exists(hot_update_list_file) or os.stat(hot_update_list_file).st_size == 0:
-        old_hot_update_list = {'versionId': '', 'abInfos': []}
+    if not os.path.exists(old_list) or os.stat(old_list).st_size == 0:
+        old_list = {'versionId': '', 'abInfos': []}
     else:
-        with open(hot_update_list_file, 'r') as f:
-            old_hot_update_list = json.load(f)
-            if (old_hot_update_list['versionId'] == res_version and not always_downloads):
+        with open(old_list, 'r') as f:
+            old_list = json.load(f)
+            if (old_list['versionId'] == res_version and not always_downloads):
                 print('Up to date.')
                 exit(0)
 
-    hot_update_list = requests.get(f'{assets_url}/hot_update_list.json').json()
-    with open(hot_update_list_file, 'w') as f:
-        f.write(json.dumps(hot_update_list))
-        print(f'Updated {hot_update_list_file}: {old_hot_update_list["versionId"]} -> {res_version}')
+    new_list = requests.get(f'{assets_url}/hot_update_list.json').json()
+    with open(old_list, 'w') as f:
+        f.write(json.dumps(new_list))
+        print(f'Updated {old_list}: {old_list["versionId"]} -> {res_version}')
 
-    os.makedirs(dest_dir, exist_ok=True)
+    os.makedirs(dest, exist_ok=True)
     with ThreadPoolExecutor(max_workers=2) as executor:
-        for item in hot_update_list['abInfos']:
+        for item in new_list['abInfos']:
             filename = item['name']
             hash = item['hash']
 
             is_force_file = any(always in filename or always == filename for always in always_downloads)
             is_skip_file = any(x for x in skip_downloads if x in filename)
-            is_old_file = any(x for x in old_hot_update_list['abInfos'] if x['name'] == filename and x['hash'] == hash)
+            is_old_file = any(x for x in old_list['abInfos'] if x['name'] == filename and x['hash'] == hash)
 
             if is_force_file:
                 pass
@@ -88,7 +88,7 @@ def main():
                 if is_old_file:
                     continue
 
-            executor.submit(download_file, item, assets_url, dest_dir)
+            executor.submit(download_file, item, assets_url, dest)
 
 
 if __name__ == "__main__":
