@@ -57,10 +57,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-          sparse-checkout: |
-            !*.png
-            *
-          sparse-checkout-cone-mode: false
       - name: Install dependencies
         working-directory: scripts
         run: |
@@ -395,9 +391,7 @@ jobs:
         with:
           ref: ${{ needs.update.outputs.branch-name }}
           sparse-checkout: |
-            !*.png
-            *
-          sparse-checkout-cone-mode: false
+            spine
       - name: Download ArkUnpacker source
         run: |
           Set-Location ..
