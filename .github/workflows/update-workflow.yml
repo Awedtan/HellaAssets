@@ -185,14 +185,14 @@ jobs:
           extract_ab "spritepack/skill_icons_*.ab" "operator/skills" "--filter-by-text skill_icon -t sprite -g none --log-level warning"
 
           if [[ -d scripts/temp/extracted/operator ]]; then
-            cd scripts/temp/extracted/operator
+            pushd scripts/temp/extracted/operator
             # remove '_#number' at end of filenames
             find . -name "*_#*.png" -print0 | while IFS= read -r -d '' file; do
                 if [[ "$file" =~ ^(.*)_#([0-9]+)\.png$ ]]; then
                     mv "$file" "${BASH_REMATCH[1]}.png"
                 fi
             done
-            cd ../../..
+            popd
           fi
 
           mkdir -p operator/
@@ -258,7 +258,7 @@ jobs:
           extract_ab "ui/skin_groups.ab" "skingroups" "-t sprite -g none --log-level warning"
 
           if [[ -d scripts/temp/extracted/skingroups ]]; then
-            cd scripts/temp/extracted/skingroups
+            pushd scripts/temp/extracted/skingroups
             # remove 'year#' at start of filenames
             for file in *.png; do
                 if [[ "$file" =~ ^[0-9]{4}#(.*) ]]; then
@@ -273,7 +273,7 @@ jobs:
             done
             # remove all '_deco' files
             find . -name "*_deco.png" -type f -exec rm -f {} \;
-            cd ../../..
+            popd
           fi
 
           mkdir -p skingroups
