@@ -1,5 +1,5 @@
-attrs==25.1.0 # default is too outdated, get any newer version
+attrs>=25.1.0 # default is too outdated, get any newer version
 numpy
 playwright
 requests
-unitypy==1.22.2 # needed for custom compression algos
+unitypy>=1.22.2 # needed for custom compression algos
