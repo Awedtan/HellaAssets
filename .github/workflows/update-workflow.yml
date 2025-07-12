@@ -397,7 +397,7 @@ jobs:
           Set-Location ..
           git clone --recurse-submodules --depth=1 --branch v4.0.1 https://github.com/isHarryh/Ark-Unpacker.git
       - name: Install ArkUnpacker dependencies
-        run: pip install bson flatbuffers numpy Pillow pycryptodome pydub unitypy==1.22.2
+        run: pip install bson flatbuffers numpy Pillow pycryptodome pydub "unitypy>=1.22.2"
       - name: Patch ArkUnpacker to encode UTF-8
         run: |
           (Get-Content ..\Ark-Unpacker\src\utils\GlobalMethods.py) -replace '\{text\}', '{text.encode()}' | Set-Content ..\Ark-Unpacker\src\utils\GlobalMethods.py
