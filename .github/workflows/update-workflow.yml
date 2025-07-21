@@ -61,8 +61,10 @@ jobs:
         working-directory: scripts
         run: |
           sudo apt update
-          sudo apt install -y dotnet8 imagemagick jq python3 python3-pip curl tar git sudo sed wget dpkg zip
-          pip install -r requirements.txt
+          sudo apt install -y dotnet8 imagemagick jq python3 python3-pip python3-venv curl tar git sudo sed wget dpkg zip
+          python3 -m venv venv \
+            && source venv/bin/activate \
+            && pip install -r requirements.txt
           playwright install
           playwright install-deps
           rm -f temp && mkdir temp
@@ -74,6 +76,8 @@ jobs:
         id: download-assets
         working-directory: scripts
         run: |
+          source venv/bin/activate
+
           python3 download_ab.py                                 \
             --server ${{ inputs.server }}                        \
             --dest temp/download                                 \
@@ -98,6 +102,8 @@ jobs:
         if: steps.download-assets.outputs.condition == 'true'
         working-directory: scripts
         run: |
+          source venv/bin/activate
+
           if [[ -f "apk_url_${{ inputs.server }}.txt" ]]; then
             LOCAL_URL=$(cat apk_url_${{ inputs.server }}.txt)
           elif [[ "${{ inputs.skip_apk_update }}" == "true" ]]; then
@@ -287,6 +293,7 @@ jobs:
         if: steps.download-assets.outputs.extract == 'true'
         id: extract-deploy-spine
         run: |
+          source venv/bin/activate
           source scripts/utils.sh
 
           FILES=battle/prefabs/[uc]tokens.ab
@@ -317,6 +324,7 @@ jobs:
         if: steps.download-assets.outputs.extract == 'true'
         id: extract-enemy-spine
         run: |
+          source venv/bin/activate
           source scripts/utils.sh
 
           extract_ab "battle/prefabs/enemies/enemy*.ab" "spine/enemy" "-t tex2d,textAsset -g none --log-level warning"
@@ -336,6 +344,7 @@ jobs:
         if: steps.download-assets.outputs.extract == 'true'
         id: extract-operator-spine
         run: |
+          source venv/bin/activate
           source scripts/utils.sh
 
           FILES=chararts/char*.ab
