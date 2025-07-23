@@ -102,7 +102,7 @@ jobs:
         if: steps.download-assets.outputs.condition == 'true'
         working-directory: scripts
         run: |
-          source $HOME//bin/activate
+          source $HOME/venv/bin/activate
 
           if [[ -f "apk_url_${{ inputs.server }}.txt" ]]; then
             LOCAL_URL=$(cat apk_url_${{ inputs.server }}.txt)
